@@ -1,4 +1,4 @@
-export type AIProvider = 'openai' | 'anthropic' | 'google';
+export type AIProvider = 'openai' | 'anthropic' | 'google' | 'deepseek';
 
 export interface ApiKey {
   id: string;

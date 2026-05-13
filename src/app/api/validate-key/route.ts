@@ -23,6 +23,9 @@ export async function POST(request: Request) {
       case 'google':
         valid = await validateGoogle(key);
         break;
+      case 'deepseek':
+        valid = await validateDeepSeek(key);
+        break;
       default:
         return NextResponse.json(
           { valid: false, message: '不支持的服务商' },
@@ -74,6 +77,17 @@ async function validateGoogle(key: string): Promise<boolean> {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`
     );
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function validateDeepSeek(key: string): Promise<boolean> {
+  try {
+    const response = await fetch('https://api.deepseek.com/v1/models', {
+      headers: { Authorization: `Bearer ${key}` },
+    });
     return response.ok;
   } catch {
     return false;

@@ -43,6 +43,18 @@ const PROVIDER_CONFIGS = {
     }),
     getUrlWithKey: (url: string, apiKey: string) => `${url}?key=${apiKey}&alt=sse`,
   },
+  deepseek: {
+    url: 'https://api.deepseek.com/v1/chat/completions',
+    headers: (apiKey: string) => ({
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    }),
+    body: (messages: any[], stream: boolean) => ({
+      model: 'deepseek-chat',
+      messages,
+      stream,
+    }),
+  },
 };
 
 export async function POST(request: Request) {
