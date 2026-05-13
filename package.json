@@ -28,6 +28,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.19.9",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -37,6 +38,7 @@
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.86.0"
   }
 }
