@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 
-const PROVIDER_CONFIGS = {
+const PROVIDER_CONFIGS: Record<string, {
+  url: string;
+  headers: (apiKey: string) => Record<string, string>;
+  body: (messages: any[], stream: boolean) => any;
+  getUrlWithKey?: (url: string, apiKey: string) => string;
+}> = {
   openai: {
     url: 'https://api.openai.com/v1/chat/completions',
     headers: (apiKey: string) => ({
@@ -9,6 +14,138 @@ const PROVIDER_CONFIGS = {
     }),
     body: (messages: any[], stream: boolean) => ({
       model: 'gpt-4o-mini',
+      messages,
+      stream,
+    }),
+  },
+  deepseek: {
+    url: 'https://api.deepseek.com/v1/chat/completions',
+    headers: (apiKey: string) => ({
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    }),
+    body: (messages: any[], stream: boolean) => ({
+      model: 'deepseek-chat',
+      messages,
+      stream,
+    }),
+  },
+  kimi: {
+    url: 'https://api.moonshot.cn/v1/chat/completions',
+    headers: (apiKey: string) => ({
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    }),
+    body: (messages: any[], stream: boolean) => ({
+      model: 'moonshot-v1-8k',
+      messages,
+      stream,
+    }),
+  },
+  qwen: {
+    url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+    headers: (apiKey: string) => ({
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    }),
+    body: (messages: any[], stream: boolean) => ({
+      model: 'qwen-plus',
+      messages,
+      stream,
+    }),
+  },
+  zhipu: {
+    url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    headers: (apiKey: string) => ({
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    }),
+    body: (messages: any[], stream: boolean) => ({
+      model: 'glm-4-flash',
+      messages,
+      stream,
+    }),
+  },
+  moonshot: {
+    url: 'https://api.moonshot.cn/v1/chat/completions',
+    headers: (apiKey: string) => ({
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    }),
+    body: (messages: any[], stream: boolean) => ({
+      model: 'moonshot-v1-8k',
+      messages,
+      stream,
+    }),
+  },
+  baidu: {
+    url: 'https://qianfan.baidubce.com/v2/chat/completions',
+    headers: (apiKey: string) => ({
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    }),
+    body: (messages: any[], stream: boolean) => ({
+      model: 'ernie-speed-128k',
+      messages,
+      stream,
+    }),
+  },
+  bytedance: {
+    url: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+    headers: (apiKey: string) => ({
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    }),
+    body: (messages: any[], stream: boolean) => ({
+      model: 'doubao-pro-32k',
+      messages,
+      stream,
+    }),
+  },
+  mistral: {
+    url: 'https://api.mistral.ai/v1/chat/completions',
+    headers: (apiKey: string) => ({
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    }),
+    body: (messages: any[], stream: boolean) => ({
+      model: 'mistral-small-latest',
+      messages,
+      stream,
+    }),
+  },
+  grok: {
+    url: 'https://api.x.ai/v1/chat/completions',
+    headers: (apiKey: string) => ({
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    }),
+    body: (messages: any[], stream: boolean) => ({
+      model: 'grok-2',
+      messages,
+      stream,
+    }),
+  },
+  yi: {
+    url: 'https://api.lingyiwanwu.com/v1/chat/completions',
+    headers: (apiKey: string) => ({
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    }),
+    body: (messages: any[], stream: boolean) => ({
+      model: 'yi-large',
+      messages,
+      stream,
+    }),
+  },
+  minimax: {
+    url: 'https://api.minimax.chat/v1/text/chatcompletion_v2',
+    headers: (apiKey: string) => ({
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    }),
+    body: (messages: any[], stream: boolean) => ({
+      model: 'MiniMax-Text-01',
       messages,
       stream,
     }),
@@ -43,18 +180,6 @@ const PROVIDER_CONFIGS = {
     }),
     getUrlWithKey: (url: string, apiKey: string) => `${url}?key=${apiKey}&alt=sse`,
   },
-  deepseek: {
-    url: 'https://api.deepseek.com/v1/chat/completions',
-    headers: (apiKey: string) => ({
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    }),
-    body: (messages: any[], stream: boolean) => ({
-      model: 'deepseek-chat',
-      messages,
-      stream,
-    }),
-  },
 };
 
 export async function POST(request: Request) {
@@ -76,8 +201,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const url = 'getUrlWithKey' in config
-      ? config.getUrlWithKey(config.url, apiKey)
+    const url = (config as any).getUrlWithKey
+      ? (config as any).getUrlWithKey(config.url, apiKey)
       : config.url;
 
     const response = await fetch(url, {
@@ -109,12 +234,13 @@ export async function POST(request: Request) {
 
     // 标准化响应格式
     let content = '';
-    if (provider === 'openai') {
-      content = data.choices?.[0]?.message?.content || '';
-    } else if (provider === 'anthropic') {
+    if (provider === 'anthropic') {
       content = data.content?.[0]?.text || '';
     } else if (provider === 'google') {
       content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } else {
+      // OpenAI 兼容格式（适用于 openai/deepseek/kimi/qwen/zhipu 等）
+      content = data.choices?.[0]?.message?.content || '';
     }
 
     return NextResponse.json({

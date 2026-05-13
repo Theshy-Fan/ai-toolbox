@@ -16,21 +16,34 @@ export function useAI(options: UseAIOptions = {}) {
   const { apiKeys, getDecryptedKey } = useApiKeyStore();
 
   const getClient = useCallback(async (): Promise<AIClient | null> => {
-    const provider = options.provider || 'openai';
-    const key = apiKeys.find((k) => k.provider === provider && k.isValid);
+    if (options.provider) {
+      const key = apiKeys.find((k) => k.provider === options.provider);
+      if (!key) {
+        toast.error(`请先在设置页面添加 ${options.provider} 的 API Key`);
+        return null;
+      }
+      const decryptedKey = await getDecryptedKey(key.id);
+      if (!decryptedKey) {
+        toast.error('无法解密 API Key');
+        return null;
+      }
+      return new AIClient(options.provider, decryptedKey);
+    }
 
-    if (!key) {
-      toast.error(`请先设置 ${provider} 的 API Key`);
+    // 没有指定 provider，自动选择第一个可用的 Key
+    const availableKey = apiKeys[0];
+    if (!availableKey) {
+      toast.error('请先在设置页面添加 API Key');
       return null;
     }
 
-    const decryptedKey = await getDecryptedKey(key.id);
+    const decryptedKey = await getDecryptedKey(availableKey.id);
     if (!decryptedKey) {
       toast.error('无法解密 API Key');
       return null;
     }
 
-    return new AIClient(provider, decryptedKey);
+    return new AIClient(availableKey.provider, decryptedKey);
   }, [apiKeys, getDecryptedKey, options.provider]);
 
   const chat = useCallback(
