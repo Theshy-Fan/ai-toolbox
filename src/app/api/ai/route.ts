@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const runtime = 'edge';
+
 const PROVIDER_CONFIGS: Record<string, {
   url: string;
   headers: (apiKey: string) => Record<string, string>;

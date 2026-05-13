@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const runtime = 'edge';
+
 interface ProviderValidator {
   url: string | ((key: string) => string);
   headers: (key: string) => Record<string, string>;
